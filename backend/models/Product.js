@@ -17,6 +17,10 @@ const ProductSchema = new mongoose.Schema({
     specifications: {
         type: String
     },
+    image: {
+        type: String,
+        default: ''
+    },
     trustScore: {
         type: Number,
         default: 0

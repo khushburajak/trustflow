@@ -36,26 +36,24 @@ exports.getUserReviews = async (req, res) => {
 exports.createReview = async (req, res) => {
     try {
         const { productId, rating, comment } = req.body;
-        
-        // Simple sentiment analysis (for demo purposes)
+
         let sentiment = 'neutral';
         if (rating >= 4) sentiment = 'positive';
         else if (rating <= 2) sentiment = 'negative';
-        
+
         const review = new Review({
             product: productId,
             user: req.user.id,
             rating,
             comment,
             sentiment,
-            isApproved: req.user.role === 'admin' // Auto-approve if admin
+            isApproved: req.user.role === 'admin'
         });
-        
+
         await review.save();
-        
-        // Add review to product
+
         await Product.findByIdAndUpdate(productId, { $push: { reviews: review._id } });
-        
+
         res.status(201).json(review);
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
@@ -66,22 +64,21 @@ exports.createReview = async (req, res) => {
 exports.updateReview = async (req, res) => {
     try {
         const { rating, comment } = req.body;
-        
-        // Simple sentiment analysis (for demo purposes)
+
         let sentiment = 'neutral';
         if (rating >= 4) sentiment = 'positive';
         else if (rating <= 2) sentiment = 'negative';
-        
+
         const review = await Review.findOneAndUpdate(
             { _id: req.params.id, user: req.user.id },
             { rating, comment, sentiment },
             { new: true }
         );
-        
+
         if (!review) {
             return res.status(404).json({ message: 'Review not found' });
         }
-        
+
         res.json(review);
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
@@ -95,14 +92,13 @@ exports.deleteReview = async (req, res) => {
             _id: req.params.id,
             $or: [{ user: req.user.id }, { role: 'admin' }]
         });
-        
+
         if (!review) {
             return res.status(404).json({ message: 'Review not found' });
         }
-        
-        // Remove review from product
+
         await Product.findByIdAndUpdate(review.product, { $pull: { reviews: review._id } });
-        
+
         res.json({ message: 'Review deleted' });
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
@@ -118,13 +114,42 @@ exports.moderateReview = async (req, res) => {
             { isApproved },
             { new: true }
         );
-        
+
         if (!review) {
             return res.status(404).json({ message: 'Review not found' });
         }
-        
+
         res.json(review);
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// Get a single review by ID
+exports.getReviewById = async (req, res) => {
+    try {
+        const review = await Review.findById(req.params.id)
+            .populate('user', 'username email')
+            .populate('product', 'name');
+
+        if (!review) {
+            return res.status(404).json({
+                success: false,
+                message: 'Review not found'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: review
+        });
+
+    } catch (err) {
+        console.error('Error fetching review:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error: err.message
+        });
     }
 };

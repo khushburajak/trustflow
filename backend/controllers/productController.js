@@ -27,7 +27,14 @@ exports.getProductById = async (req, res) => {
 exports.createProduct = async (req, res) => {
     try {
         const { name, description, category, specifications } = req.body;
-        const product = new Product({ name, description, category, specifications });
+        const imageUrl = req.file ? `/uploads/${req.file.filename}` : '';
+        const product = new Product({ 
+            name, 
+            description, 
+            category, 
+            specifications,
+            image: imageUrl
+        });
         await product.save();
         res.status(201).json(product);
     } catch (err) {
@@ -39,9 +46,16 @@ exports.createProduct = async (req, res) => {
 exports.updateProduct = async (req, res) => {
     try {
         const { name, description, category, specifications } = req.body;
+        const imageUrl = req.file ? `/uploads/${req.file.filename}` : '';
         const product = await Product.findByIdAndUpdate(
             req.params.id,
-            { name, description, category, specifications },
+            { 
+                name, 
+                description, 
+                category, 
+                specifications,
+                image: imageUrl
+            },
             { new: true }
         );
         if (!product) {
@@ -49,7 +63,7 @@ exports.updateProduct = async (req, res) => {
         }
         res.json(product);
     } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
 

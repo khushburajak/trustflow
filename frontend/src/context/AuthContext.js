@@ -12,7 +12,6 @@ export const AuthProvider = ({ children }) => {
       try {
         const token = localStorage.getItem('token');
         if (token) {
-          // Verify token with backend
           const res = await axios.get('/api/auth/verify', {
             headers: { Authorization: `Bearer ${token}` }
           });
@@ -28,9 +27,13 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const res = await axios.post('/api/auth/login', { email, password });
-    localStorage.setItem('token', res.data.token);
-    setUser(res.data.user);
+    try {
+      const res = await axios.post('/api/auth/login', { email, password });
+      localStorage.setItem('token', res.data.token);
+      setUser(res.data.user);
+    } catch (err) {
+      throw err;
+    }
   };
 
   const register = async (username, email, password) => {
